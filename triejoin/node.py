@@ -2,20 +2,26 @@ class Node:
     _child_nodes = None
     _parent = None
     _element = None
+    _member_of = None
+    _prefix = None
          
     def __init__(self, element=None, parent=None):
         self._element = element
         self._parent = parent
         self._child_nodes = []
+        self._member_of = 0
+        self._prefix = None
 
     def prefix(self):
-        stack = []
-        node = self
-        while node._parent:
-            stack.append(node._element)
-            node = node._parent
-    
-        return ''.join(reversed(stack))
+        if not self._prefix:
+            stack = []
+            node = self
+            while node._parent:
+                stack.append(node._element)
+                node = node._parent
+            self._prefix = ''.join(reversed(stack))
+        
+        return self._prefix
                    
     def add_or_fetch_child(self, element):
         """ Create and/or fetch a child that has element
@@ -48,10 +54,24 @@ class Node:
             if self.is_active(prefix, distance_func):
                 return False
         return True
+   
+    def is_ancestor(self, node):
+        for a in node.move_up():
+            if self == node._parent:
+                return True
+        return False
     
+    def move_up(self):
+        node = self
+        while node._parent:
+            yield node._parent
+            node = node._parent
+
+    def __str__(self):
+        return 'Node(%s)' % (self.prefix() if self._parent else '-ROOT-',)
+    
+    def __repr__(self):
+        return '<Node(%s)>' % (self.prefix() if self._parent else '-ROOT-',)
      
     def __iter__(self):
-        def children():
-            for c in self._child_nodes:
-                yield c
-        return children()
+        return (c for c in self._child_nodes)
