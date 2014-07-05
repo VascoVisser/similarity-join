@@ -9,7 +9,8 @@ class Trie:
     _collection_count = None
 
     def __init__(self):
-        self._root = Node()
+        self._root = Node(element='')
+        self._root._prefix = ''
         self._terminals = set()
         self._collection_count = 1
 
@@ -47,30 +48,26 @@ class Trie:
             node = stack.pop()
 
     @staticmethod
-    def levensthein(sigma):
-        def curried(seq1, seq2):
-            return distance(seq1, seq2) <= sigma
-        return curried
- 
-    @staticmethod
     def calc_active_node_set(node, parent_node_set, sigma):
         prefix = node.prefix()
-        node_set = set()
+        node_list = []
         for candidate in parent_node_set:
-            if candidate.is_active(prefix, Trie.levensthein(sigma)):
-                node_set.add(candidate)
+            if distance(candidate._prefix, prefix) <= sigma:
+                node_list.append(candidate)
             # Test all childeren of candidate and add to active set if needed
-            node_set |= set(c for c in candidate if c.__visited and \
-                                c.is_active(prefix, Trie.levensthein(sigma)))
-        return node_set
+#            node_list.extend([c for c in (c for c in candidate._child_nodes if c._visited) if \
+#                                distance(c._prefix, prefix) <= sigma])
+            node_list.extend([c for c in candidate._child_nodes if c._visited and \
+                                distance(c._prefix, prefix) <= sigma])
+        return set(node_list)
    
     def trie_search(self, seq, sigma):
         node = self._root
         stack = [None]
         while node:
-            if node in self._terminals and node.is_active(seq, levensthein(sigma)):
+            if node in self._terminals and node.is_active(seq, sigma):
                 yield node
-            if not node.can_prune(seq, levensthein(sigma)):
+            if not node.can_prune(seq, sigma):
                 for child in node:
                     stack.append(child)
             node = stack.pop()
@@ -88,21 +85,21 @@ class Trie:
     def _self_join(self, sigma):
     
         for n in self.pre_order():
-            n.__visited = False
+            n._visited = False
         
         active_node_stack = [set([self._root])]
-        self._root.__visited = True
+        self._root._visited = True
 
         traversal_stack = [None] + [c for c in self._root]
         node = traversal_stack.pop()
 
         while node:
-            node.__visited = True
+            node._visited = True
 
             # Calculate this node's active node set
             parent_active_nodes = active_node_stack[-1]
             active_node_set = self.calc_active_node_set(node, parent_active_nodes, sigma)
-            # active_node_set = set(n for n in active_node_set if n.__visited)
+            # active_node_set = set(n for n in active_node_set if n._visited)
 
             # Update active node sets of ancestors
             for ancestor_active_node in active_node_stack[-sigma:]:

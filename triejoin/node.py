@@ -1,10 +1,12 @@
+from Levenshtein import distance
+
 class Node:
     _child_nodes = None
     _parent = None
     _element = None
     _member_of = None
     _prefix = None
-         
+             
     def __init__(self, element=None, parent=None):
         self._element = element
         self._parent = parent
@@ -43,15 +45,15 @@ class Node:
             if c._element == element:
                 return c
   
-    def is_active(self, test_seq, distance_func):
+    def is_active(self, test_seq, sigma):
         node_prefix = self.prefix()
-        return distance_func(node_prefix, test_seq)
+        return distance(node_prefix, test_seq) <= sigma
 
-    def can_prune(self, test_seq, distance_func):
+    def can_prune(self, test_seq, sigma):
         node_prefix = self.prefix()
         for i in range(len(test_seq) + 1):
             prefix = test_seq[:i]
-            if self.is_active(prefix, distance_func):
+            if self.is_active(prefix, sigma):
                 return False
         return True
    
