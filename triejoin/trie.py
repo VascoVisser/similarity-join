@@ -1,5 +1,6 @@
-from node import Node
-from itertools import izip_longest
+import itertools as it
+from collections import deque
+
 from Levenshtein import distance
 
 class Trie:
@@ -10,7 +11,6 @@ class Trie:
 
     def __init__(self):
         self._root = Node(element='')
-        self._root._prefix = ''
         self._terminals = set()
         self._collection_count = 1
 
@@ -37,30 +37,31 @@ class Trie:
         
         return node
 
-    def pre_order(self):
-        """ Pre_order traversal starting at the root """ 
-        node = self._root
-        stack = [None]
-        while node:
-            yield node
-            for child in node:
-                stack.append(child)
-            node = stack.pop()
+    @staticmethod
+    def add_node_active_node_set(node, ed, anset):
+        if node not in anset or anset[node] > ed:
+            anset[node] = ed 
 
     @staticmethod
     def calc_active_node_set(node, parent_node_set, sigma):
-        prefix = node.prefix()
-        node_list = []
-        for candidate in parent_node_set:
-            if distance(candidate._prefix, prefix) <= sigma:
-                node_list.append(candidate)
-            # Test all childeren of candidate and add to active set if needed
-#            node_list.extend([c for c in (c for c in candidate._child_nodes if c._visited) if \
-#                                distance(c._prefix, prefix) <= sigma])
-            node_list.extend([c for c in candidate._child_nodes if c._visited and \
-                                distance(c._prefix, prefix) <= sigma])
-        return set(node_list)
-   
+        active_node_set = {}
+        for n, ed in parent_node_set.items():
+            if ed + 1 <= sigma:
+                Trie.add_node_active_node_set(n, ed + 1, active_node_set)
+
+            for nc in n._child_nodes:
+                if not nc._visited:
+                    continue
+                if nc._element == node._element:
+                    Trie.add_node_active_node_set(nc, ed, active_node_set)
+                    if ed < sigma and nc != node:
+                        for ncc,d in nc.breadth_first(sigma-ed):
+                            Trie.add_node_active_node_set(ncc, ed+d, active_node_set)  
+                elif ed + 1 <= sigma:
+                    Trie.add_node_active_node_set(nc, ed+1, active_node_set)
+
+        return active_node_set 
+    
     def trie_search(self, seq, sigma):
         node = self._root
         stack = [None]
@@ -84,10 +85,10 @@ class Trie:
    
     def _self_join(self, sigma):
     
-        for n in self.pre_order():
+        for n in self._root.pre_order():
             n._visited = False
         
-        active_node_stack = [set([self._root])]
+        active_node_stack = [{self._root : 0}]
         self._root._visited = True
 
         traversal_stack = [None] + [c for c in self._root]
@@ -99,11 +100,10 @@ class Trie:
             # Calculate this node's active node set
             parent_active_nodes = active_node_stack[-1]
             active_node_set = self.calc_active_node_set(node, parent_active_nodes, sigma)
-            # active_node_set = set(n for n in active_node_set if n._visited)
 
             # Update active node sets of ancestors
-            for ancestor_active_node in active_node_stack[-sigma:]:
-                ancestor_active_node.add(node)
+            for ancestor_active_node, cnt in zip(active_node_stack[-1:-sigma-1:-1], it.count(start=1)):
+                Trie.add_node_active_node_set(node, cnt, ancestor_active_node)
 
             # Possibly generate results
             if node in self._terminals:
@@ -112,7 +112,7 @@ class Trie:
                         yield (node, output_candidate)
 
             # Push child nodes on traversal stack
-            traversal_stack.extend(child for child in node)
+            traversal_stack.extend(child for child in node._child_nodes)
             
             next_node = traversal_stack.pop()
             # active_node_stack book keeping
@@ -129,14 +129,101 @@ class Trie:
                     if a._parent == next_node._parent:
                         break
             node = next_node
-
+    
     def join(self, sigma):
        if self._collection_count < 2:
            return self._self_join(sigma)
-
-
-
-
-
-
         
+
+class Node:
+    _child_nodes = None
+    _parent = None
+    _element = None
+    _member_of = None
+             
+    def __init__(self, element=None, parent=None):
+        self._element = element
+        self._parent = parent
+        self._child_nodes = []
+        self._member_of = 0
+
+    def prefix(self):
+        stack = []
+        node = self
+        while node._parent:
+            stack.append(node._element)
+            node = node._parent
+        return ''.join(reversed(stack))
+                   
+    def add_or_fetch_child(self, element):
+        """ Create and/or fetch a child that has element
+
+        If this node has a child with element, then return
+        that child. Otherwise create a node with element,
+        add the node to this node and then return it.
+        """
+
+        child = self.child_by_element(element)
+        if not child:
+            child = Node(element, self)
+            self._child_nodes.append(child)
+        return child
+    
+    def child_by_element(self, element):
+        """ Return a child iff it has element """
+        for c in self._child_nodes:
+            if c._element == element:
+                return c
+  
+    def is_active(self, test_seq, sigma):
+        node_prefix = self.prefix()
+        return distance(node_prefix, test_seq) <= sigma
+
+    def can_prune(self, test_seq, sigma):
+        node_prefix = self.prefix()
+        for i in range(len(test_seq) + 1):
+            prefix = test_seq[:i]
+            if self.is_active(prefix, sigma):
+                return False
+        return True
+   
+    def is_ancestor(self, node):
+        for a in node.move_up():
+            if self == node._parent:
+                return True
+        return False
+    
+    def move_up(self):
+        node = self
+        while node._parent:
+            yield node._parent
+            node = node._parent
+
+    def pre_order(self):
+        """ Pre_order traversal starting at the root """ 
+        node = self 
+        stack = [None]
+        while node:
+            yield node
+            for child in node._child_nodes:
+                stack.append(child)
+            node = stack.pop()
+
+    def breadth_first(self, max_rel_depth=None):
+        dq = deque((n, 1) for n in self)
+        while dq:
+            n,d = dq.popleft()
+            yield n,d
+            d_ = d + 1
+            if not max_rel_depth or d_ <= max_rel_depth:
+                for n_ in n:
+                    dq.append((n_,d_))
+
+    def __str__(self):
+        return 'Node(%s)' % (self.prefix() if self._parent else '-ROOT-',)
+    
+    def __repr__(self):
+        return '<Node(%s)>' % (self.prefix() if self._parent else '-ROOT-',)
+     
+    def __iter__(self):
+        return (c for c in self._child_nodes)
