@@ -2,6 +2,7 @@ import itertools as it
 from collections import deque
 
 from Levenshtein import distance
+from transactionaldict import TransactionalDict as tdict
 
 class Trie:
 
@@ -38,29 +39,24 @@ class Trie:
         return node
 
     @staticmethod
-    def add_node_active_node_set(node, ed, anset):
-        if node not in anset or anset[node] > ed:
-            anset[node] = ed 
-
-    @staticmethod
     def calc_active_node_set(node, parent_node_set, sigma):
-        active_node_set = {}
+        active_nodes = []
         for n, ed in parent_node_set.items():
-            if ed + 1 <= sigma:
-                Trie.add_node_active_node_set(n, ed + 1, active_node_set)
+            if ed < sigma:
+                active_nodes.append((n, ed+1))
 
             for nc in n._child_nodes:
                 if not nc._visited:
                     continue
                 if nc._element == node._element:
-                    Trie.add_node_active_node_set(nc, ed, active_node_set)
+                    active_nodes.append((nc, ed))
                     if ed < sigma and nc != node:
                         for ncc,d in nc.breadth_first(sigma-ed):
-                            Trie.add_node_active_node_set(ncc, ed+d, active_node_set)  
-                elif ed + 1 <= sigma:
-                    Trie.add_node_active_node_set(nc, ed+1, active_node_set)
+                            active_nodes.append((ncc, ed+d))
+                elif ed < sigma:
+                    active_nodes.append((nc, ed+1))
 
-        return active_node_set 
+        return dict(sorted(active_nodes, key=lambda x: x[1], reverse=True))
     
     def trie_search(self, seq, sigma):
         node = self._root
@@ -103,7 +99,8 @@ class Trie:
 
             # Update active node sets of ancestors
             for ancestor_active_node, cnt in zip(active_node_stack[-1:-sigma-1:-1], it.count(start=1)):
-                Trie.add_node_active_node_set(node, cnt, ancestor_active_node)
+                if not node in ancestor_active_node or cnt < ancestor_active_node[node]:
+                    ancestor_active_node[node] = cnt
 
             # Possibly generate results
             if node in self._terminals:
