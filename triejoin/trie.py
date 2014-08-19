@@ -95,17 +95,21 @@ class Trie:
 
             # Calculate this node's active node set
             parent_active_nodes = active_node_stack[-1]
-            active_node_set = self.calc_active_node_set(node, parent_active_nodes, sigma)
+            active_node_set = self.calc_active_node_set(
+                node, parent_active_nodes, sigma)
 
             # Update active node sets of ancestors
-            for ancestor_active_node, cnt in zip(active_node_stack[-1:-sigma-1:-1], it.count(start=1)):
-                if not node in ancestor_active_node or cnt < ancestor_active_node[node]:
+            for ancestor_active_node, cnt in zip(
+                    active_node_stack[-1:-sigma-1:-1], it.count(start=1)):
+                if (not node in ancestor_active_node or 
+                        cnt < ancestor_active_node[node]):
                     ancestor_active_node[node] = cnt
 
             # Possibly generate results
             if node in self._terminals:
                 for output_candidate in active_node_set:
-                    if output_candidate in self._terminals and output_candidate != node:
+                    if (output_candidate in self._terminals and 
+                            output_candidate != node):
                         yield (node, output_candidate)
 
             # Push child nodes on traversal stack
@@ -202,8 +206,7 @@ class Node:
         stack = [None]
         while node:
             yield node
-            for child in node._child_nodes:
-                stack.append(child)
+            stack.extend(reversed(node._child_nodes))
             node = stack.pop()
 
     def breadth_first(self, max_rel_depth=None):
@@ -217,10 +220,12 @@ class Node:
                     dq.append((n_,d_))
 
     def __str__(self):
-        return 'Node(%s)' % (self.prefix() if self._parent else '-ROOT-',)
+        return 'Node(%s)' % (self.prefix() if 
+            self._parent else '-ROOT-',)
     
     def __repr__(self):
-        return '<Node(%s)>' % (self.prefix() if self._parent else '-ROOT-',)
+        return '<Node(%s)>' % (self.prefix() if 
+            self._parent else '-ROOT-',)
      
     def __iter__(self):
         return (c for c in self._child_nodes)
