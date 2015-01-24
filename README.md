@@ -13,8 +13,12 @@ Please refer to [my site](http://procrastinaty.com/projects/) for the documentat
 
 cosinejoin
 ------------
-This module does approximate string matching using cosine similarity as a distance metric.
+This module does approximate string matching using cosine similarity as a distance metric. The module creates an intermediate representation of the dataset that becomes quite large.
+
+Your data too big for this module? A cosine join can be implemented in SQL [2].
 
 Bibliography
 ------------
 [1] - Trie-Join:Efficient Trie-based String Similarity Joins with Edit Distance Constraints; Jiannan Wang, Jianhua Feng, Guoliang Li.
+
+[2] - Text joins in an RDBMS for web data integration. Gravano, L., Ipeirotis, P. G., Koudas, N., & Srivastava, D.
