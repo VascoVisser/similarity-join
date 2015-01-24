@@ -1,7 +1,9 @@
 Similarity-join
 =========
 
-This package contains modules for doing (in-memory) similarity joins (aka [approximate string matching](http://en.wikipedia.org/wiki/Approximate_string_matching)).
+This package contains modules for doing (in-memory) similarity joins (i.e., [approximate string matching](http://en.wikipedia.org/wiki/Approximate_string_matching) between lists).
+
+A similarity join finds similar records in lists. Given two lists of strings (called records) R and S, a similarity join will find for each record in R all records in S that are similar. Similarity is defined by a distance metric. The choice of metric is use-case specific.
 
 The package currently contains two modules.
 
