@@ -13,9 +13,9 @@ Please refer to [my site](http://procrastinaty.com/projects/) for the documentat
 
 cosinejoin
 ------------
-This module does approximate string matching using cosine similarity as a distance metric. The module creates an intermediate representation of the dataset that becomes quite large.
+This module does approximate string matching using cosine similarity as a distance metric. The module comes with an option to approximate the results. Approximation greatly reduces time and memory foodprints.
 
-Your data too big for this module? A cosine join can be implemented in SQL [2].
+The module creates an intermediate representation of the dataset that becomes quite large. Your data too big for this module? A cosine join can be implemented in SQL [2].
 
 Bibliography
 ------------
