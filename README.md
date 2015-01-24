@@ -1,7 +1,7 @@
 Similarity-join
 =========
 
-This package contains modules for doing similarity joins (aka [approximate string matching](http://en.wikipedia.org/wiki/Approximate_string_matching)).
+This package contains modules for doing (in-memory) similarity joins (aka [approximate string matching](http://en.wikipedia.org/wiki/Approximate_string_matching)).
 
 The package currently contains two modules.
 
