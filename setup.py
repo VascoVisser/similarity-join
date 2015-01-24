@@ -1,21 +1,23 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='trie-join',
-    version='0.1.0',
+    name='similarity-join',
+    version='0.1.2',
 
     author='Vasco Visser',
     author_email='vasco.visser@gmail.com',
 
-    packages=['triejoin'],
-    url='https://github.com/VascoVisser/trie-join',
+    packages=['simjoin'],
+    url='https://github.com/VascoVisser/similarity-join',
     license='MIT',
     
-    description='Join string sets with edit distance constraints',
+    description='Join string lists with similarity constraints',
     long_description=open('README.md').read(),
     
     install_requires=[
         "python-Levenshtein >= 0.11.2",
+        "pandas" >= "0.13.1",
+        "numpy" >= "1.9.1",
     ],
 )
 
